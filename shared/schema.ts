@@ -25,11 +25,12 @@ export const sessions = pgTable("sessions", {
   assessmentId: integer("assessment_id").notNull(),
   startTime: timestamp("start_time").notNull(),
   endTime: timestamp("end_time"),
-  riskScore: integer("risk_score"),
-  behavioralData: json("behavioral_data"),
+  riskScore: integer("risk_score").default(0),
+  behavioralData: json("behavioral_data").default([]),
   consentGiven: boolean("consent_given").notNull().default(false),
 });
 
+// Schema for user operations
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
@@ -37,21 +38,25 @@ export const insertUserSchema = createInsertSchema(users).pick({
   name: true,
 });
 
+// Schema for assessment operations
 export const insertAssessmentSchema = createInsertSchema(assessments).pick({
   title: true,
   description: true,
   duration: true,
 });
 
-export const insertSessionSchema = createInsertSchema(sessions).pick({
-  userId: true,
-  assessmentId: true,
-  startTime: true,
-  consentGiven: true,
-}).transform((data) => ({
-  ...data,
-  startTime: new Date(data.startTime), // Transform string to Date
-}));
+// Schema for session operations with proper date handling
+export const insertSessionSchema = createInsertSchema(sessions)
+  .pick({
+    userId: true,
+    assessmentId: true,
+    startTime: true,
+    consentGiven: true,
+  })
+  .transform((data) => ({
+    ...data,
+    startTime: new Date(data.startTime),
+  }));
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

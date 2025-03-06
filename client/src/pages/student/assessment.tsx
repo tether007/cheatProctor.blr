@@ -9,14 +9,14 @@ import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function StudentAssessment() {
   const [activeSession, setActiveSession] = useState<Session | null>(null);
   const [showConsent, setShowConsent] = useState(false);
-  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(
-    null
-  );
+  const [selectedAssessment, setSelectedAssessment] = useState<Assessment | null>(null);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const { data: assessments, isLoading } = useQuery<Assessment[]>({
     queryKey: ["/api/assessments/active"],
@@ -34,7 +34,7 @@ export default function StudentAssessment() {
 
   const handleConsent = async (accepted: boolean) => {
     setShowConsent(false);
-    if (!accepted || !selectedAssessment) {
+    if (!accepted || !selectedAssessment || !user) {
       toast({
         title: "Assessment Cancelled",
         description: "You must accept the privacy notice to continue.",
@@ -44,13 +44,28 @@ export default function StudentAssessment() {
     }
 
     try {
-      const res = await apiRequest("POST", "/api/sessions", {
+      const sessionData = {
         assessmentId: selectedAssessment.id,
+        userId: user.id,
         startTime: new Date().toISOString(),
         consentGiven: true,
-      });
+      };
+
+      console.log("Creating session with data:", sessionData);
+
+      const res = await apiRequest("POST", "/api/sessions", sessionData);
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || 'Failed to create session');
+      }
+
       const session = await res.json();
       setActiveSession(session);
+      toast({
+        title: "Assessment Started",
+        description: "Behavioral monitoring is now active.",
+      });
     } catch (error: any) {
       console.error("Failed to start session:", error);
       toast({

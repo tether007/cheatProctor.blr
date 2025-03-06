@@ -48,7 +48,10 @@ export const insertSessionSchema = createInsertSchema(sessions).pick({
   assessmentId: true,
   startTime: true,
   consentGiven: true,
-});
+}).transform((data) => ({
+  ...data,
+  startTime: new Date(data.startTime), // Transform string to Date
+}));
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

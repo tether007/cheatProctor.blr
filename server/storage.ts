@@ -11,7 +11,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
 
   // Assessment operations
-  createAssessment(assessment: InsertAssessment): Promise<Assessment>;
+  createAssessment(assessment: InsertAssessment & { instructorId: number }): Promise<Assessment>;
   getAssessment(id: number): Promise<Assessment | undefined>;
   getAssessmentsByInstructor(instructorId: number): Promise<Assessment[]>;
   getActiveAssessments(): Promise<Assessment[]>;
@@ -22,7 +22,7 @@ export interface IStorage {
   updateSession(id: number, data: Partial<Session>): Promise<Session>;
   getSession(id: number): Promise<Session | undefined>;
   addBehavioralData(sessionId: number, event: BehavioralEvent): Promise<void>;
-  
+
   sessionStore: session.Store;
 }
 
@@ -60,9 +60,13 @@ export class MemStorage implements IStorage {
     return user;
   }
 
-  async createAssessment(assessment: InsertAssessment): Promise<Assessment> {
+  async createAssessment(assessment: InsertAssessment & { instructorId: number }): Promise<Assessment> {
     const id = this.currentId.assessments++;
-    const newAssessment = { ...assessment, id, active: false };
+    const newAssessment: Assessment = { 
+      ...assessment, 
+      id, 
+      active: false 
+    };
     this.assessments.set(id, newAssessment);
     return newAssessment;
   }
@@ -79,7 +83,7 @@ export class MemStorage implements IStorage {
 
   async getActiveAssessments(): Promise<Assessment[]> {
     return Array.from(this.assessments.values()).filter(
-      (assessment) => assessment.active,
+      (assessment) => assessment.active
     );
   }
 

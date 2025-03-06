@@ -45,6 +45,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(assessments);
   });
 
+  app.patch("/api/assessments/:id", async (req, res) => {
+    if (req.user?.role !== "instructor") {
+      return res.status(403).send("Only instructors can modify assessments");
+    }
+
+    const assessment = await storage.getAssessment(parseInt(req.params.id));
+    if (!assessment) {
+      return res.status(404).send("Assessment not found");
+    }
+
+    if (assessment.instructorId !== req.user.id) {
+      return res.status(403).send("Access denied");
+    }
+
+    const updatedAssessment = await storage.updateAssessment(assessment.id, req.body);
+    res.json(updatedAssessment);
+  });
+
+
   // Session routes
   app.post("/api/sessions", async (req, res) => {
     if (req.user?.role !== "student") {

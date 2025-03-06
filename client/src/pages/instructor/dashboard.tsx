@@ -154,13 +154,38 @@ export default function InstructorDashboard() {
                 <p className="text-sm text-muted-foreground">
                   {assessment.description}
                 </p>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm">
-                    Duration: {assessment.duration} minutes
-                  </span>
-                  <span className="text-sm">
-                    Status: {assessment.active ? "Active" : "Inactive"}
-                  </span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm">
+                      Duration: {assessment.duration} minutes
+                    </span>
+                    <span className="text-sm">
+                      Status: {assessment.active ? "Active" : "Inactive"}
+                    </span>
+                  </div>
+                  <Button
+                    variant={assessment.active ? "destructive" : "default"}
+                    onClick={async () => {
+                      try {
+                        await apiRequest("PATCH", `/api/assessments/${assessment.id}`, {
+                          active: !assessment.active
+                        });
+                        queryClient.invalidateQueries({ queryKey: ["/api/assessments/instructor"] });
+                        toast({
+                          title: "Success",
+                          description: `Assessment ${assessment.active ? "deactivated" : "activated"} successfully`
+                        });
+                      } catch (error) {
+                        toast({
+                          title: "Error",
+                          description: "Failed to update assessment status",
+                          variant: "destructive"
+                        });
+                      }
+                    }}
+                  >
+                    {assessment.active ? "Deactivate" : "Activate"}
+                  </Button>
                 </div>
               </div>
             </CardContent>

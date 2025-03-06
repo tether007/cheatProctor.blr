@@ -126,34 +126,45 @@ export class MemStorage implements IStorage {
     const behavioralData = session.behavioralData as BehavioralEvent[] || [];
     behavioralData.push(event);
 
-    // Enhanced risk score calculation
-    let riskScore = session.riskScore || 0;
-    const recentEvents = behavioralData.slice(-10); // Look at last 10 events
+    try {
+      // Call Python ML service for risk analysis
+      const response = await fetch('http://localhost:5001/analyze', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ behavioral_data: behavioralData }),
+      });
 
-    // Calculate risk based on event frequency and patterns
-    const tabSwitches = recentEvents.filter(e => e.type === "tabswitch").length;
-    const blurs = recentEvents.filter(e => e.type === "blur").length;
-    const mouseMoves = recentEvents.filter(e => e.type === "mousemove").length;
+      if (!response.ok) {
+        throw new Error('Failed to analyze behavioral data');
+      }
 
-    // Increase risk for:
-    // - Frequent tab switching (max +30)
-    riskScore += tabSwitches * 3;
+      const analysisResult = await response.json();
 
-    // - Window blur events (max +40)
-    riskScore += blurs * 4;
+      await this.updateSession(sessionId, {
+        behavioralData,
+        riskScore: analysisResult.risk_score
+      });
+    } catch (error) {
+      console.error('Error analyzing behavioral data:', error);
+      // Fallback to basic risk scoring if ML service fails
+      let riskScore = session.riskScore || 0;
+      const recentEvents = behavioralData.slice(-10);
 
-    // - Very low mouse movement (potential automation)
-    if (mouseMoves < 3) {
-      riskScore += 10;
+      const tabSwitches = recentEvents.filter(e => e.type === "tabswitch").length;
+      const blurs = recentEvents.filter(e => e.type === "blur").length;
+
+      riskScore += tabSwitches * 3;
+      riskScore += blurs * 4;
+
+      riskScore = Math.min(100, Math.max(0, riskScore));
+
+      await this.updateSession(sessionId, {
+        behavioralData,
+        riskScore
+      });
     }
-
-    // Normalize to 0-100 range
-    riskScore = Math.min(100, Math.max(0, riskScore));
-
-    await this.updateSession(sessionId, {
-      behavioralData,
-      riskScore
-    });
   }
 }
 

@@ -46,7 +46,14 @@ export default function InstructorDashboard() {
 
   const onSubmit = async (data: any) => {
     try {
-      await apiRequest("POST", "/api/assessments", data);
+      // Log the data being sent
+      console.log("Creating assessment with data:", data);
+
+      await apiRequest("POST", "/api/assessments", {
+        ...data,
+        duration: parseInt(data.duration)
+      });
+
       queryClient.invalidateQueries({ queryKey: ["/api/assessments/instructor"] });
       setCreateDialogOpen(false);
       form.reset();
@@ -54,10 +61,11 @@ export default function InstructorDashboard() {
         title: "Success",
         description: "Assessment created successfully",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Failed to create assessment:", error);
       toast({
         title: "Error",
-        description: "Failed to create assessment",
+        description: error.message || "Failed to create assessment",
         variant: "destructive",
       });
     }
@@ -175,7 +183,7 @@ export default function InstructorDashboard() {
                           title: "Success",
                           description: `Assessment ${assessment.active ? "deactivated" : "activated"} successfully`
                         });
-                      } catch (error) {
+                      } catch (error: any) {
                         toast({
                           title: "Error",
                           description: "Failed to update assessment status",

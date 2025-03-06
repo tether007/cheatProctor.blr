@@ -41,7 +41,6 @@ export const insertAssessmentSchema = createInsertSchema(assessments).pick({
   title: true,
   description: true,
   duration: true,
-  instructorId: true,
 });
 
 export const insertSessionSchema = createInsertSchema(sessions).pick({

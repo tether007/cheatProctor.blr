@@ -51,10 +51,11 @@ export default function StudentAssessment() {
       });
       const session = await res.json();
       setActiveSession(session);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Failed to start session:", error);
       toast({
         title: "Error",
-        description: "Failed to start assessment session",
+        description: error.message || "Failed to start assessment session",
         variant: "destructive",
       });
     }
@@ -72,10 +73,10 @@ export default function StudentAssessment() {
         title: "Assessment Completed",
         description: "Your session has been recorded successfully.",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to end assessment session",
+        description: error.message || "Failed to end assessment session",
         variant: "destructive",
       });
     }
